@@ -1,0 +1,23 @@
+{
+  "name": "مركزي — منصة إدارة مراكز التعليم",
+  "short_name": "مركزي",
+  "description": "المنصة الشاملة لإدارة مراكز التعليم الخاصة في مصر",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#1E40AF",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

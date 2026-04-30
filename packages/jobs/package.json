@@ -1,0 +1,20 @@
+{
+  "name": "@markazi/jobs",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "clean": "rm -rf node_modules .turbo dist"
+  },
+  "dependencies": {
+    "@markazi/db": "workspace:*",
+    "@markazi/notifications": "workspace:*",
+    "@markazi/payments": "workspace:*",
+    "bullmq": "^5.30.1",
+    "ioredis": "^5.4.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

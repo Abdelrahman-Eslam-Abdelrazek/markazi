@@ -1,0 +1,1495 @@
+// =================================================================
+// Markazi — Database Schema
+// Education Center Management Platform for the Egyptian Market
+// =================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =================================================================
+// ENUMS
+// =================================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  CENTER_OWNER
+  BRANCH_MANAGER
+  INSTRUCTOR
+  STUDENT
+  PARENT
+  ACCOUNTANT
+}
+
+enum AuthProvider {
+  PHONE_OTP
+  EMAIL_PASSWORD
+  GOOGLE
+  MAGIC_LINK
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum EducationLevel {
+  PRIMARY
+  PREPARATORY
+  SECONDARY
+  UNIVERSITY
+  POSTGRADUATE
+  PROFESSIONAL
+}
+
+enum CenterStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_SETUP
+  DEACTIVATED
+}
+
+enum SubscriptionPlan {
+  STARTER
+  GROWTH
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  TRIALING
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContentType {
+  VIDEO_UPLOAD
+  VIDEO_EXTERNAL
+  PDF
+  DOCUMENT
+  RICH_TEXT
+  IMAGE
+  AUDIO
+  EXTERNAL_LINK
+  LIVE_SESSION
+  ASSIGNMENT
+  QUIZ
+}
+
+enum DripMode {
+  NONE
+  SEQUENTIAL
+  DATE_BASED
+}
+
+enum LessonStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  FAWRY
+  VODAFONE_CASH
+  INSTAPAY
+  ORANGE_CASH
+  ETISALAT_CASH
+  VISA
+  MASTERCARD
+  VALU
+  BANK_TRANSFER
+  CASH
+}
+
+enum PaymentType {
+  FULL
+  INSTALLMENT
+  SUBSCRIPTION
+  PER_LECTURE
+  ENROLLMENT_FEE
+}
+
+enum InstallmentStatus {
+  UPCOMING
+  DUE
+  OVERDUE
+  PAID
+  PARTIALLY_PAID
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum AttendanceMethod {
+  QR_CODE
+  MANUAL_INSTRUCTOR
+  MANUAL_ADMIN
+  AUTO_VIDEO
+  GEOLOCATION
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum QuestionType {
+  MCQ
+  TRUE_FALSE
+  SHORT_ANSWER
+  ESSAY
+  FILL_BLANK
+  FILE_UPLOAD
+  MATCHING
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ExamStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  CLOSED
+  GRADED
+}
+
+enum ExamAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+  TIMED_OUT
+}
+
+enum AssignmentType {
+  WRITTEN
+  FILE_UPLOAD
+  VIDEO_UPLOAD
+  MULTI_PART
+  WORKSHEET
+  RESEARCH
+}
+
+enum SubmissionStatus {
+  PENDING
+  SUBMITTED
+  LATE_SUBMITTED
+  GRADED
+  RETURNED
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+  IN_APP
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  READ
+}
+
+enum MessageThreadType {
+  DIRECT
+  COURSE_DISCUSSION
+  ANNOUNCEMENT
+  SUPPORT
+}
+
+enum LiveSessionStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum CertificateStatus {
+  GENERATED
+  REVOKED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PAYMENT
+  ENROLLMENT
+  GRADE
+}
+
+enum WebsitePageType {
+  HOME
+  ABOUT
+  CONTACT
+  COURSES
+  CUSTOM
+}
+
+// =================================================================
+// AUTH & USERS
+// =================================================================
+
+model User {
+  id             String          @id @default(cuid())
+  phone          String?         @unique
+  phoneVerified  Boolean         @default(false)
+  email          String?         @unique
+  emailVerified  DateTime?
+  passwordHash   String?
+  nameAr         String
+  nameEn         String?
+  avatar         String?
+  gender         Gender?
+  dateOfBirth    DateTime?
+  educationLevel EducationLevel?
+  locale         String          @default("ar")
+  isActive       Boolean         @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+
+  memberships       CenterMembership[]
+  accounts          Account[]
+  sessions          Session[]
+  notifications     Notification[]
+  sentMessages      Message[]            @relation("sender")
+  receivedMessages  MessageRecipient[]
+  parentLinks       ParentStudent[]      @relation("parent")
+  childLinks        ParentStudent[]      @relation("child")
+  enrollments       Enrollment[]
+  examAttempts      ExamAttempt[]
+  submissions       AssignmentSubmission[]
+  attendanceRecords AttendanceRecord[]
+  payments          Payment[]
+  reviews           CourseReview[]
+  points            PointTransaction[]
+  badges            UserBadge[]
+  certificates      Certificate[]
+  createdCourses    Course[]             @relation("courseCreator")
+  instructorCourses CourseInstructor[]
+  auditLogs         AuditLog[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Account {
+  id                String       @id @default(cuid())
+  userId            String
+  provider          AuthProvider
+  providerAccountId String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         Int?
+  createdAt         DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  expires      DateTime
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String
+  type       String
+  expires    DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([identifier, token])
+  @@index([identifier])
+  @@index([expires])
+  @@map("verification_tokens")
+}
+
+model ParentStudent {
+  id        String   @id @default(cuid())
+  parentId  String
+  studentId String
+  relation  String?
+  createdAt DateTime @default(now())
+
+  parent  User @relation("parent", fields: [parentId], references: [id], onDelete: Cascade)
+  student User @relation("child", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@index([parentId])
+  @@index([studentId])
+  @@map("parent_students")
+}
+
+// =================================================================
+// TENANT: CENTERS & BRANCHES
+// =================================================================
+
+model Center {
+  id                 String             @id @default(cuid())
+  nameAr             String
+  nameEn             String?
+  slug               String             @unique
+  logo               String?
+  coverImage         String?
+  primaryColor       String             @default("#1E40AF")
+  secondaryColor     String             @default("#F59E0B")
+  description        String?            @db.Text
+  specializations    String[]
+  phone              String?
+  whatsapp           String?
+  email              String?
+  facebookUrl        String?
+  instagramUrl       String?
+  status             CenterStatus       @default(PENDING_SETUP)
+  timezone           String             @default("Africa/Cairo")
+  currency           String             @default("EGP")
+  taxId              String?
+  subscriptionPlan   SubscriptionPlan   @default(STARTER)
+  subscriptionStatus SubscriptionStatus @default(TRIALING)
+  subscriptionStartAt DateTime?
+  subscriptionEndAt  DateTime?
+  maxStudents        Int                @default(50)
+  maxCourses         Int                @default(1)
+  trialEndsAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
+
+  branches            Branch[]
+  memberships         CenterMembership[]
+  courses             Course[]
+  payments            Payment[]
+  invoices            Invoice[]
+  website             CenterWebsite?
+  customDomain        CustomDomain?
+  notificationConfigs NotificationConfig[]
+  paymentConfigs      PaymentConfig[]
+  auditLogs           AuditLog[]
+  subscriptionHistory SubscriptionHistory[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("centers")
+}
+
+model Branch {
+  id           String   @id @default(cuid())
+  centerId     String
+  nameAr       String
+  nameEn       String?
+  address      String?  @db.Text
+  latitude     Float?
+  longitude    Float?
+  phone        String?
+  isMain       Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  workingHours Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  center      Center              @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  memberships CenterMembership[]
+  courses     Course[]
+  attendance  AttendanceSession[]
+  schedules   ScheduleSlot[]
+
+  @@index([centerId])
+  @@map("branches")
+}
+
+model CenterMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  centerId  String
+  branchId  String?
+  role      UserRole
+  isActive  Boolean  @default(true)
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  center Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  branch Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, centerId, role])
+  @@index([userId])
+  @@index([centerId])
+  @@index([branchId])
+  @@index([role])
+  @@map("center_memberships")
+}
+
+model SubscriptionHistory {
+  id        String             @id @default(cuid())
+  centerId  String
+  plan      SubscriptionPlan
+  status    SubscriptionStatus
+  startAt   DateTime
+  endAt     DateTime?
+  amount    Decimal?           @db.Decimal(10, 2)
+  createdAt DateTime           @default(now())
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@index([centerId])
+  @@map("subscription_history")
+}
+
+// =================================================================
+// COURSES, UNITS, LESSONS, CONTENT
+// =================================================================
+
+model Course {
+  id                       String       @id @default(cuid())
+  centerId                 String
+  branchId                 String?
+  createdById              String
+  nameAr                   String
+  nameEn                   String?
+  slug                     String
+  description              String?      @db.Text
+  thumbnail                String?
+  price                    Decimal      @default(0) @db.Decimal(10, 2)
+  currency                 String       @default("EGP")
+  isFree                   Boolean      @default(false)
+  status                   CourseStatus @default(DRAFT)
+  level                    EducationLevel?
+  subject                  String?
+  dripMode                 DripMode     @default(NONE)
+  maxStudents              Int?
+  startDate                DateTime?
+  endDate                  DateTime?
+  contentAvailableAfterEnd Boolean      @default(true)
+  autoCertificate          Boolean      @default(false)
+  isFeatured               Boolean      @default(false)
+  sortOrder                Int          @default(0)
+  publishedAt              DateTime?
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+  deletedAt                DateTime?
+
+  center             Center              @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  branch             Branch?             @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  createdBy          User                @relation("courseCreator", fields: [createdById], references: [id])
+  instructors        CourseInstructor[]
+  units              Unit[]
+  enrollments        Enrollment[]
+  exams              Exam[]
+  assignments        Assignment[]
+  attendanceSessions AttendanceSession[]
+  discussions        DiscussionThread[]
+  reviews            CourseReview[]
+  certificates       Certificate[]
+  scheduleSlots      ScheduleSlot[]
+
+  @@unique([centerId, slug])
+  @@index([centerId])
+  @@index([branchId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("courses")
+}
+
+model CourseInstructor {
+  id           String   @id @default(cuid())
+  courseId      String
+  instructorId String
+  isPrimary    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  course     Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor User   @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, instructorId])
+  @@index([instructorId])
+  @@map("course_instructors")
+}
+
+model Unit {
+  id          String    @id @default(cuid())
+  courseId    String
+  nameAr      String
+  nameEn      String?
+  description String?   @db.Text
+  sortOrder   Int       @default(0)
+  isPublished Boolean   @default(false)
+  dripDate    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([courseId])
+  @@index([sortOrder])
+  @@map("units")
+}
+
+model Lesson {
+  id              String       @id @default(cuid())
+  unitId          String
+  nameAr          String
+  nameEn          String?
+  description     String?      @db.Text
+  contentType     ContentType
+  sortOrder       Int          @default(0)
+  status          LessonStatus @default(DRAFT)
+  isFreePreview   Boolean      @default(false)
+  isPaidOnly      Boolean      @default(true)
+  duration        Int?
+  openAt          DateTime?
+  closeAt         DateTime?
+  contentMeta     Json?
+  richTextContent String?      @db.Text
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  unit     Unit             @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
+
+  @@index([unitId])
+  @@index([sortOrder])
+  @@index([status])
+  @@map("lessons")
+}
+
+model LessonProgress {
+  id              String    @id @default(cuid())
+  lessonId        String
+  userId          String
+  enrollmentId    String
+  isCompleted     Boolean   @default(false)
+  progressPercent Int       @default(0)
+  lastPosition    Int?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, userId])
+  @@index([enrollmentId])
+  @@index([userId])
+  @@map("lesson_progress")
+}
+
+model Enrollment {
+  id                String           @id @default(cuid())
+  userId            String
+  courseId           String
+  centerId          String
+  status            EnrollmentStatus @default(ACTIVE)
+  enrolledAt        DateTime         @default(now())
+  completedAt       DateTime?
+  completionPercent Int              @default(0)
+  lastAccessedAt    DateTime?
+  certificateId     String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course            Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonProgress    LessonProgress[]
+  attendanceRecords AttendanceRecord[]
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([centerId])
+  @@index([status])
+  @@map("enrollments")
+}
+
+// =================================================================
+// EXAMS & QUESTION BANK
+// =================================================================
+
+model QuestionBank {
+  id          String   @id @default(cuid())
+  centerId    String
+  courseId    String?
+  nameAr      String
+  nameEn      String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions Question[]
+
+  @@index([centerId])
+  @@index([courseId])
+  @@map("question_banks")
+}
+
+model Question {
+  id             String          @id @default(cuid())
+  questionBankId String?
+  createdById    String
+  type           QuestionType
+  difficulty     DifficultyLevel @default(MEDIUM)
+  topic          String?
+  textAr         String          @db.Text
+  textEn         String?         @db.Text
+  points         Decimal         @default(1) @db.Decimal(5, 2)
+  options        Json?
+  explanation    String?         @db.Text
+  imageUrl       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  questionBank  QuestionBank?  @relation(fields: [questionBankId], references: [id], onDelete: SetNull)
+  examQuestions ExamQuestion[]
+
+  @@index([questionBankId])
+  @@index([type])
+  @@index([difficulty])
+  @@index([topic])
+  @@map("questions")
+}
+
+model Exam {
+  id                 String     @id @default(cuid())
+  courseId            String
+  createdById        String
+  nameAr             String
+  nameEn             String?
+  description        String?    @db.Text
+  status             ExamStatus @default(DRAFT)
+  startAt            DateTime?
+  endAt              DateTime?
+  timeLimitMinutes   Int?
+  totalMarks         Decimal    @db.Decimal(6, 2)
+  passingMarks       Decimal    @db.Decimal(6, 2)
+  maxAttempts        Int        @default(1)
+  shuffleQuestions   Boolean    @default(false)
+  shuffleOptions     Boolean    @default(false)
+  showCorrectAnswers Boolean    @default(false)
+  showCorrectAfter   DateTime?
+  paidStudentsOnly   Boolean    @default(true)
+  isAntiCheat        Boolean    @default(false)
+  publishedAt        DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  course    Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions ExamQuestion[]
+  attempts  ExamAttempt[]
+
+  @@index([courseId])
+  @@index([status])
+  @@index([startAt, endAt])
+  @@map("exams")
+}
+
+model ExamQuestion {
+  id        String  @id @default(cuid())
+  examId    String
+  questionId String
+  sortOrder Int     @default(0)
+  points    Decimal @db.Decimal(5, 2)
+
+  exam     Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers  ExamAnswer[]
+
+  @@unique([examId, questionId])
+  @@index([examId])
+  @@map("exam_questions")
+}
+
+model ExamAttempt {
+  id            String            @id @default(cuid())
+  examId        String
+  userId        String
+  attemptNumber Int
+  status        ExamAttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime          @default(now())
+  submittedAt   DateTime?
+  totalScore    Decimal?          @db.Decimal(6, 2)
+  percentage    Decimal?          @db.Decimal(5, 2)
+  isPassed      Boolean?
+  gradedAt      DateTime?
+  gradedById    String?
+  ipAddress     String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  exam    Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers ExamAnswer[]
+
+  @@unique([examId, userId, attemptNumber])
+  @@index([examId])
+  @@index([userId])
+  @@index([status])
+  @@map("exam_attempts")
+}
+
+model ExamAnswer {
+  id             String   @id @default(cuid())
+  attemptId      String
+  examQuestionId String
+  answerData     Json
+  isCorrect      Boolean?
+  score          Decimal? @db.Decimal(5, 2)
+  feedback       String?  @db.Text
+  gradedAt       DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  attempt      ExamAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  examQuestion ExamQuestion @relation(fields: [examQuestionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, examQuestionId])
+  @@index([attemptId])
+  @@map("exam_answers")
+}
+
+// =================================================================
+// ASSIGNMENTS
+// =================================================================
+
+model Assignment {
+  id                  String         @id @default(cuid())
+  courseId             String
+  unitId              String?
+  createdById         String
+  type                AssignmentType
+  nameAr              String
+  nameEn              String?
+  description         String?        @db.Text
+  instructions        String?        @db.Text
+  totalMarks          Decimal        @db.Decimal(6, 2)
+  deadline            DateTime
+  allowLateSubmission Boolean        @default(false)
+  latePenaltyPercent  Int?
+  hideSubmissions     Boolean        @default(true)
+  paidStudentsOnly    Boolean        @default(true)
+  worksheetFileUrl    String?
+  parts               Json?
+  publishedAt         DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  submissions AssignmentSubmission[]
+
+  @@index([courseId])
+  @@index([unitId])
+  @@index([deadline])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id             String           @id @default(cuid())
+  assignmentId   String
+  userId         String
+  status         SubmissionStatus @default(PENDING)
+  submittedAt    DateTime?
+  submissionData Json?
+  isLate         Boolean          @default(false)
+  score          Decimal?         @db.Decimal(6, 2)
+  maxScore       Decimal?         @db.Decimal(6, 2)
+  feedback       String?          @db.Text
+  gradedAt       DateTime?
+  gradedById     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+  @@index([assignmentId])
+  @@index([userId])
+  @@index([status])
+  @@map("assignment_submissions")
+}
+
+// =================================================================
+// ATTENDANCE
+// =================================================================
+
+model AttendanceSession {
+  id                String           @id @default(cuid())
+  courseId           String
+  branchId          String?
+  createdById       String
+  title             String?
+  sessionDate       DateTime         @db.Date
+  startTime         DateTime?
+  endTime           DateTime?
+  method            AttendanceMethod
+  qrCode            String?          @unique
+  qrExpiresAt       DateTime?
+  geofenceLatitude  Float?
+  geofenceLongitude Float?
+  geofenceRadiusM   Int?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  course  Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  branch  Branch?            @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  records AttendanceRecord[]
+
+  @@index([courseId])
+  @@index([sessionDate])
+  @@index([qrCode])
+  @@map("attendance_sessions")
+}
+
+model AttendanceRecord {
+  id                  String           @id @default(cuid())
+  attendanceSessionId String
+  userId              String
+  enrollmentId        String
+  status              AttendanceStatus @default(ABSENT)
+  method              AttendanceMethod
+  checkedInAt         DateTime?
+  latitude            Float?
+  longitude           Float?
+  notes               String?
+  markedById          String?
+  parentNotified      Boolean          @default(false)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  session    AttendanceSession @relation(fields: [attendanceSessionId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollment Enrollment        @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([attendanceSessionId, userId])
+  @@index([userId])
+  @@index([enrollmentId])
+  @@index([status])
+  @@map("attendance_records")
+}
+
+// =================================================================
+// PAYMENTS & FINANCIAL
+// =================================================================
+
+model PaymentConfig {
+  id          String        @id @default(cuid())
+  centerId    String
+  method      PaymentMethod
+  isEnabled   Boolean       @default(false)
+  credentials Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([centerId, method])
+  @@map("payment_configs")
+}
+
+model Payment {
+  id                   String        @id @default(cuid())
+  centerId             String
+  userId               String
+  courseId              String?
+  installmentId        String?
+  invoiceId            String?
+  type                 PaymentType
+  method               PaymentMethod
+  amount               Decimal       @db.Decimal(10, 2)
+  currency             String        @default("EGP")
+  status               PaymentStatus @default(PENDING)
+  gatewayProvider      String?
+  gatewayTransactionId String?       @unique
+  gatewayOrderId       String?
+  gatewayResponse      Json?
+  isManual             Boolean       @default(false)
+  recordedById         String?
+  manualNotes          String?
+  referenceNumber      String        @unique @default(cuid())
+  paidAt               DateTime?
+  refundedAt           DateTime?
+  refundAmount         Decimal?      @db.Decimal(10, 2)
+  platformFee          Decimal?      @db.Decimal(10, 2)
+  platformFeePercent   Decimal?      @db.Decimal(4, 2)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  center      Center       @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  installment Installment? @relation(fields: [installmentId], references: [id], onDelete: SetNull)
+  invoice     Invoice?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+  @@index([method])
+  @@index([paidAt])
+  @@index([referenceNumber])
+  @@map("payments")
+}
+
+model InstallmentPlan {
+  id                   String   @id @default(cuid())
+  centerId             String
+  userId               String
+  courseId              String
+  totalAmount          Decimal  @db.Decimal(10, 2)
+  numberOfInstallments Int
+  createdById          String
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  installments Installment[]
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([courseId])
+  @@map("installment_plans")
+}
+
+model Installment {
+  id                String            @id @default(cuid())
+  installmentPlanId String
+  installmentNumber Int
+  amount            Decimal           @db.Decimal(10, 2)
+  dueDate           DateTime          @db.Date
+  status            InstallmentStatus @default(UPCOMING)
+  paidAmount        Decimal           @default(0) @db.Decimal(10, 2)
+  paidAt            DateTime?
+  reminderSentAt    DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  plan     InstallmentPlan @relation(fields: [installmentPlanId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@unique([installmentPlanId, installmentNumber])
+  @@index([dueDate])
+  @@index([status])
+  @@map("installments")
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  centerId      String
+  userId        String
+  invoiceNumber String        @unique
+  status        InvoiceStatus @default(DRAFT)
+  subtotal      Decimal       @db.Decimal(10, 2)
+  tax           Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  currency      String        @default("EGP")
+  dueDate       DateTime?     @db.Date
+  issuedAt      DateTime?
+  pdfUrl        String?
+  notes         String?       @db.Text
+  lineItems     Json
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  center   Center    @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([invoiceNumber])
+  @@index([status])
+  @@map("invoices")
+}
+
+// =================================================================
+// NOTIFICATIONS & MESSAGING
+// =================================================================
+
+model NotificationConfig {
+  id          String              @id @default(cuid())
+  centerId    String
+  channel     NotificationChannel
+  isEnabled   Boolean             @default(false)
+  credentials Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@unique([centerId, channel])
+  @@map("notification_configs")
+}
+
+model NotificationTemplate {
+  id           String              @id @default(cuid())
+  eventType    String
+  channel      NotificationChannel
+  locale       String              @default("ar")
+  subject      String?
+  bodyTemplate String              @db.Text
+  isSystem     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([eventType, channel, locale])
+  @@map("notification_templates")
+}
+
+model Notification {
+  id         String              @id @default(cuid())
+  userId     String
+  centerId   String?
+  channel    NotificationChannel
+  eventType  String
+  title      String
+  body       String              @db.Text
+  data       Json?
+  status     NotificationStatus  @default(PENDING)
+  sentAt     DateTime?
+  readAt     DateTime?
+  failReason String?
+  externalId String?
+  createdAt  DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([centerId])
+  @@index([status])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model MessageThread {
+  id          String            @id @default(cuid())
+  centerId    String
+  courseId    String?
+  type        MessageThreadType
+  subject     String?
+  createdById String
+  isPinned    Boolean           @default(false)
+  isLocked    Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  messages   Message[]
+  recipients MessageRecipient[]
+
+  @@index([centerId])
+  @@index([courseId])
+  @@index([type])
+  @@map("message_threads")
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  threadId    String
+  senderId    String
+  body        String   @db.Text
+  attachments Json?
+  isEdited    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User          @relation("sender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([threadId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model MessageRecipient {
+  id         String    @id @default(cuid())
+  threadId   String
+  userId     String
+  lastReadAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([threadId, userId])
+  @@index([userId])
+  @@map("message_recipients")
+}
+
+// =================================================================
+// CENTER WEBSITE
+// =================================================================
+
+model CenterWebsite {
+  id              String   @id @default(cuid())
+  centerId        String   @unique
+  isPublished     Boolean  @default(false)
+  heroTitle       String?
+  heroSubtitle    String?  @db.Text
+  heroImageUrl    String?
+  aboutText       String?  @db.Text
+  contactEmail    String?
+  contactPhone    String?
+  contactAddress  String?
+  googleMapsEmbed String?
+  metaTitle       String?
+  metaDescription String?
+  ogImageUrl      String?
+  facebookUrl     String?
+  instagramUrl    String?
+  twitterUrl      String?
+  youtubeUrl      String?
+  themeOverrides  Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  center Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  pages  WebsitePage[]
+
+  @@map("center_websites")
+}
+
+model WebsitePage {
+  id          String          @id @default(cuid())
+  websiteId   String
+  type        WebsitePageType
+  titleAr     String
+  titleEn     String?
+  slug        String
+  content     String?         @db.Text
+  sortOrder   Int             @default(0)
+  isPublished Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  website CenterWebsite @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([websiteId, slug])
+  @@index([websiteId])
+  @@map("website_pages")
+}
+
+model CustomDomain {
+  id                String   @id @default(cuid())
+  centerId          String   @unique
+  domain            String   @unique
+  isVerified        Boolean  @default(false)
+  verificationToken String?
+  sslStatus         String   @default("pending")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  center Center @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@index([domain])
+  @@map("custom_domains")
+}
+
+// =================================================================
+// SCHEDULE & LIVE SESSIONS
+// =================================================================
+
+model ScheduleSlot {
+  id             String   @id @default(cuid())
+  centerId       String
+  courseId       String?
+  branchId       String?
+  instructorId   String?
+  title          String
+  description    String?
+  startAt        DateTime
+  endAt          DateTime
+  isRecurring    Boolean  @default(false)
+  recurrenceRule Json?
+  location       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  branch Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@index([centerId])
+  @@index([courseId])
+  @@index([startAt, endAt])
+  @@map("schedule_slots")
+}
+
+model LiveSession {
+  id              String            @id @default(cuid())
+  courseId        String
+  createdById    String
+  title           String
+  description     String?
+  status          LiveSessionStatus @default(SCHEDULED)
+  scheduledAt     DateTime
+  duration        Int?
+  meetingUrl      String?
+  meetingId       String?
+  meetingPassword String?
+  recordingUrl    String?
+  recordingS3Key  String?
+  startedAt       DateTime?
+  endedAt         DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([courseId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("live_sessions")
+}
+
+// =================================================================
+// GAMIFICATION & CERTIFICATES
+// =================================================================
+
+model Certificate {
+  id                String            @id @default(cuid())
+  userId            String
+  courseId           String
+  centerId          String
+  certificateNumber String            @unique
+  verificationCode  String            @unique
+  status            CertificateStatus @default(GENERATED)
+  pdfUrl            String?
+  issuedAt          DateTime          @default(now())
+  revokedAt         DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([centerId])
+  @@index([verificationCode])
+  @@map("certificates")
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  nameAr      String
+  nameEn      String?
+  description String?
+  iconUrl     String
+  criteria    String
+  pointsValue Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  centerId String
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId, centerId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+model PointTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  centerId  String
+  points    Int
+  reason    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, centerId])
+  @@index([createdAt])
+  @@map("point_transactions")
+}
+
+model Leaderboard {
+  id          String   @id @default(cuid())
+  centerId    String
+  courseId    String?
+  userId      String
+  totalPoints Int      @default(0)
+  rank        Int?
+  period      String
+  updatedAt   DateTime @updatedAt
+
+  @@unique([centerId, courseId, userId, period])
+  @@index([centerId, period, totalPoints(sort: Desc)])
+  @@map("leaderboards")
+}
+
+// =================================================================
+// REVIEWS
+// =================================================================
+
+model CourseReview {
+  id          String    @id @default(cuid())
+  courseId     String
+  userId      String
+  rating      Int
+  comment     String?   @db.Text
+  isPublished Boolean   @default(true)
+  response    String?   @db.Text
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([courseId])
+  @@index([rating])
+  @@map("course_reviews")
+}
+
+// =================================================================
+// DISCUSSIONS
+// =================================================================
+
+model DiscussionThread {
+  id         String   @id @default(cuid())
+  courseId    String
+  authorId   String
+  title      String
+  body       String   @db.Text
+  isPinned   Boolean  @default(false)
+  isLocked   Boolean  @default(false)
+  replyCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  course  Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  replies DiscussionReply[]
+
+  @@index([courseId])
+  @@index([createdAt])
+  @@map("discussion_threads")
+}
+
+model DiscussionReply {
+  id        String   @id @default(cuid())
+  threadId  String
+  authorId  String
+  body      String   @db.Text
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  thread  DiscussionThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  parent  DiscussionReply?  @relation("replies", fields: [parentId], references: [id])
+  replies DiscussionReply[] @relation("replies")
+
+  @@index([threadId])
+  @@index([parentId])
+  @@map("discussion_replies")
+}
+
+// =================================================================
+// REPORTS & AUDIT
+// =================================================================
+
+model ReportSnapshot {
+  id          String   @id @default(cuid())
+  centerId    String
+  reportType  String
+  period      String
+  data        Json
+  generatedAt DateTime @default(now())
+
+  @@unique([centerId, reportType, period])
+  @@index([centerId, reportType])
+  @@map("report_snapshots")
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  centerId   String?
+  userId     String?
+  action     AuditAction
+  entityType String
+  entityId   String
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  center Center? @relation(fields: [centerId], references: [id], onDelete: SetNull)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([centerId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

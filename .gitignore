@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+.next/
+out/
+build/
+
+# Turbo
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+
+# Prisma
+packages/db/prisma/migrations/
+
+# Testing
+coverage/
+.playwright/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Generated
+*.generated.*
+prisma/generated/

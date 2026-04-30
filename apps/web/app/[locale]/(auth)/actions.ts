@@ -2,7 +2,6 @@
 
 import { createSupabaseServerClient } from "@markazi/db";
 import { createClient } from "@supabase/supabase-js";
-import { redirect } from "next/navigation";
 
 function createAdminClient() {
   return createClient(
@@ -26,7 +25,7 @@ export async function signUp(formData: FormData) {
 
   const admin = createAdminClient();
 
-  const { data, error } = await admin.auth.admin.createUser({
+  const { error } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -47,7 +46,7 @@ export async function signUp(formData: FormData) {
     return { error: signInError.message };
   }
 
-  redirect("/dashboard");
+  return { success: true };
 }
 
 export async function signIn(formData: FormData) {
@@ -69,11 +68,11 @@ export async function signIn(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/dashboard");
+  return { success: true };
 }
 
 export async function signOut() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  return { success: true };
 }

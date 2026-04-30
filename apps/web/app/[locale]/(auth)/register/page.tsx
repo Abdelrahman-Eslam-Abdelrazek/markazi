@@ -1,20 +1,31 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Link } from "../../../../i18n/navigation";
+import { Link, useRouter } from "../../../../i18n/navigation";
 import { signUp } from "../actions";
-import { useActionState } from "react";
+import { useState, useTransition } from "react";
 
 export default function RegisterPage() {
   const t = useTranslations("auth");
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
 
-  const [state, formAction, pending] = useActionState(
-    async (_prev: { error?: string } | null, formData: FormData) => {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
       const result = await signUp(formData);
-      return result ?? null;
-    },
-    null,
-  );
+      if (result.error) {
+        setError(result.error);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -23,13 +34,13 @@ export default function RegisterPage() {
         <p className="mt-1 text-sm text-gray-500">{t("registerSubtitle")}</p>
       </div>
 
-      {state?.error && (
+      {error && (
         <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-          {state.error}
+          {error}
         </div>
       )}
 
-      <form action={formAction} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">
             {t("fullName")}
@@ -75,10 +86,10 @@ export default function RegisterPage() {
         </div>
         <button
           type="submit"
-          disabled={pending}
+          disabled={isPending}
           className="w-full rounded-lg bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:opacity-50"
         >
-          {pending ? t("loading") : t("createAccount")}
+          {isPending ? t("loading") : t("createAccount")}
         </button>
       </form>
 

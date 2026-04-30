@@ -1,72 +1,61 @@
-import createIntlMiddleware from "next-intl/middleware";
+import createMiddleware from "next-intl/middleware";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { routing } from "./i18n/routing";
 
-const intlMiddleware = createIntlMiddleware({
-  locales: ["ar", "en"],
-  defaultLocale: "ar",
-  localePrefix: "as-needed",
-});
+const intlMiddleware = createMiddleware(routing);
 
-function updateSupabaseSession(request: NextRequest, response: NextResponse) {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options as any),
-          );
-        },
-      },
-    },
-  );
+const protectedRoutes = ["/dashboard", "/courses", "/students", "/payments", "/attendance", "/exams", "/assignments", "/messages", "/reports", "/schedule", "/certificates", "/center", "/settings"];
+const authRoutes = ["/login", "/register"];
 
-  return supabase.auth.getUser();
+function stripLocalePrefix(pathname: string): string {
+  for (const locale of routing.locales) {
+    if (pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`) {
+      return pathname.slice(locale.length + 1) || "/";
+    }
+  }
+  return pathname;
 }
 
 export default async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Skip API routes and static files
-  if (
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/icons") ||
-    pathname.startsWith("/images") ||
-    pathname.includes(".")
-  ) {
-    return NextResponse.next();
-  }
-
-  // Run i18n middleware first
   const response = intlMiddleware(request);
 
-  // Refresh Supabase auth session
-  await updateSupabaseSession(request, response);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) return response;
 
-  // Subdomain detection for center websites
-  const hostname = request.headers.get("host") ?? "";
-  const mainDomains = ["localhost:3000", "markazi.com", "www.markazi.com", "app.markazi.com"];
-  const isMainDomain = mainDomains.some((d) => hostname.includes(d));
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options as any),
+        );
+      },
+    },
+  });
 
-  if (!isMainDomain) {
-    const subdomain = hostname.split(".")[0];
-    if (subdomain) {
-      response.headers.set("x-center-slug", subdomain);
-    }
+  const { data: { user } } = await supabase.auth.getUser();
+  const cleanPath = stripLocalePrefix(request.nextUrl.pathname);
+
+  const isProtected = protectedRoutes.some((r) => cleanPath.startsWith(r));
+  if (isProtected && !user) {
+    const loginUrl = new URL("/login", request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const isAuthRoute = authRoutes.some((r) => cleanPath.startsWith(r));
+  if (isAuthRoute && user) {
+    const dashboardUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|icons|images|fonts|favicon.ico|manifest.json|sw.js).*)"],
+  matcher: ["/((?!api|_next|icons|images|fonts|favicon\\.ico|manifest\\.json|sw\\.js).*)"],
 };

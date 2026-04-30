@@ -1,29 +1,48 @@
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { locales, localeDirection, type Locale } from "../../i18n/config";
+import { Cairo, Inter } from "next/font/google";
+import { routing } from "../../i18n/routing";
 
-export default async function LocaleLayout({
-  children,
-  params,
-}: {
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  variable: "--font-cairo",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+type Props = {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
-}) {
+};
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
 
-  if (!locales.includes(locale as Locale)) {
+  if (!routing.locales.includes(locale as any)) {
     notFound();
   }
 
+  setRequestLocale(locale);
   const messages = await getMessages();
-  const dir = localeDirection[locale as Locale];
+  const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
-    <div dir={dir} lang={locale} className={dir === "rtl" ? "font-cairo" : "font-inter"}>
-      <NextIntlClientProvider messages={messages}>
-        {children}
-      </NextIntlClientProvider>
-    </div>
+    <html dir={dir} lang={locale} className={`${cairo.variable} ${inter.variable}`} suppressHydrationWarning>
+      <body className={`min-h-screen bg-gray-50 antialiased ${dir === "rtl" ? "font-cairo" : "font-inter"}`}>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }

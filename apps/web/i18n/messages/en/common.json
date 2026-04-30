@@ -39,7 +39,13 @@
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "welcomeBack": "Welcome Back",
-    "createCenter": "Create New Center"
+    "createCenter": "Create New Center",
+    "createAccount": "Create Account",
+    "registerSubtitle": "Register and start managing your center",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Ahmed Mohamed",
+    "passwordHint": "At least 6 characters",
+    "loading": "Loading..."
   },
   "dashboard": {
     "title": "Dashboard",

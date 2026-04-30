@@ -23,8 +23,8 @@
   --color-accent-800: #92400E;
   --color-accent-900: #78350F;
 
-  --font-cairo: "Cairo", "Noto Sans Arabic", sans-serif;
-  --font-inter: "Inter", sans-serif;
+  --font-family-cairo: var(--font-cairo), "Cairo", "Noto Sans Arabic", sans-serif;
+  --font-family-inter: var(--font-inter), "Inter", sans-serif;
 
   --radius-4xl: 2rem;
 }
@@ -37,10 +37,10 @@
   }
 
   html[dir="rtl"] body {
-    font-family: var(--font-cairo);
+    font-family: var(--font-family-cairo);
   }
 
   html[dir="ltr"] body {
-    font-family: var(--font-inter);
+    font-family: var(--font-family-inter);
   }
 }

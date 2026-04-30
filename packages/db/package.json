@@ -17,7 +17,11 @@
     "@supabase/supabase-js": "^2.49.1",
     "@supabase/ssr": "^0.6.1"
   },
+  "peerDependencies": {
+    "next": ">=14.0.0"
+  },
   "devDependencies": {
+    "next": "^15.1.4",
     "prisma": "^6.2.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"

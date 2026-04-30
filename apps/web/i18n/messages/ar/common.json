@@ -39,7 +39,13 @@
     "noAccount": "ليس لديك حساب؟",
     "hasAccount": "لديك حساب بالفعل؟",
     "welcomeBack": "أهلاً بعودتك",
-    "createCenter": "إنشاء مركز جديد"
+    "createCenter": "إنشاء مركز جديد",
+    "createAccount": "إنشاء حساب جديد",
+    "registerSubtitle": "سجّل حسابك وابدأ بإدارة مركزك",
+    "fullName": "الاسم الكامل",
+    "fullNamePlaceholder": "أحمد محمد",
+    "passwordHint": "٦ حروف على الأقل",
+    "loading": "جاري التحميل..."
   },
   "dashboard": {
     "title": "لوحة التحكم",

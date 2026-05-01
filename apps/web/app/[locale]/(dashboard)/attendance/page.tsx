@@ -122,7 +122,9 @@ export default async function AttendancePage() {
                   return (
                     <tr key={session.id} className={`transition hover:bg-gray-50/50 ${isToday ? "bg-primary-50/30" : ""}`}>
                       <td className="px-4 py-3 font-medium text-gray-900">
-                        {session.courses?.name_ar || "—"}
+                        <Link href={`/attendance/${session.id}`} className="transition hover:text-primary-600">
+                          {(Array.isArray(session.courses) ? session.courses[0]?.name_ar : session.courses?.name_ar) || "—"}
+                        </Link>
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         <div className="flex items-center gap-2">

@@ -35,10 +35,13 @@ export async function getStudentsAndCourses() {
       .is("deleted_at", null),
   ]);
 
-  const students = (studentRes.data || []).map((s: any) => ({
-    id: s.user_id as string,
-    name: (s.users?.name_ar || s.users?.name_en || "—") as string,
-  }));
+  const students = (studentRes.data || []).map((s: any) => {
+    const u = Array.isArray(s.users) ? s.users[0] : s.users;
+    return {
+      id: s.user_id as string,
+      name: (u?.name_ar || u?.name_en || "—") as string,
+    };
+  });
 
   const courses = (courseRes.data || []).map((c: any) => ({
     id: c.id as string,
@@ -90,12 +93,30 @@ export async function recordPayment(formData: FormData) {
       status: "COMPLETED",
       type: "TUITION",
       is_manual: true,
-      recorded_by_id: user.id,
+      recorded_by_id: publicUser.id,
       manual_notes: notes,
       paid_at: new Date().toISOString(),
     });
 
   if (insertError) return { error: insertError.message };
+
+  const { data: existingEnrollment } = await admin
+    .from("enrollments")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("course_id", courseId)
+    .eq("center_id", membership.center_id)
+    .maybeSingle();
+
+  if (!existingEnrollment) {
+    await admin.from("enrollments").insert({
+      user_id: userId,
+      course_id: courseId,
+      center_id: membership.center_id,
+      status: "ACTIVE",
+      enrolled_at: new Date().toISOString(),
+    });
+  }
 
   return { success: true };
 }

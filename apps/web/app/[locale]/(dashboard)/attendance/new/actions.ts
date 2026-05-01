@@ -40,10 +40,13 @@ export async function getCourseStudents(courseId: string) {
     .eq("course_id", courseId)
     .eq("center_id", membership.center_id);
 
-  const students = (enrollments || []).map((e: any) => ({
-    userId: e.user_id as string,
-    name: (e.users?.name_ar || e.users?.name_en || "—") as string,
-  }));
+  const students = (enrollments || []).map((e: any) => {
+    const u = Array.isArray(e.users) ? e.users[0] : e.users;
+    return {
+      userId: e.user_id as string,
+      name: (u?.name_ar || u?.name_en || "—") as string,
+    };
+  });
 
   return {
     courses: (courses || []).map((c: any) => ({ id: c.id, name: c.name_ar })),
@@ -81,7 +84,7 @@ export async function submitAttendance(data: {
       session_date: new Date().toISOString().split("T")[0],
       type: "MANUAL",
       status: "COMPLETED",
-      taken_by_id: user.id,
+      taken_by_id: publicUser.id,
     })
     .select("id")
     .single();

@@ -1,30 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { requireCenter } from "../get-center";
 import { Link } from "../../../../i18n/navigation";
-
-const statusColors: Record<string, string> = {
-  COMPLETED: "bg-emerald-50 text-emerald-700",
-  PENDING: "bg-amber-50 text-amber-700",
-  FAILED: "bg-red-50 text-red-700",
-  REFUNDED: "bg-gray-100 text-gray-600",
-};
-
-const statusLabels: Record<string, string> = {
-  COMPLETED: "مكتمل",
-  PENDING: "معلق",
-  FAILED: "فشل",
-  REFUNDED: "مسترد",
-};
-
-const methodLabels: Record<string, string> = {
-  CASH: "كاش",
-  FAWRY: "فوري",
-  VODAFONE_CASH: "فودافون كاش",
-  INSTAPAY: "إنستاباي",
-  VISA: "فيزا",
-  MASTERCARD: "ماستركارد",
-  BANK_TRANSFER: "تحويل بنكي",
-};
+import { PaymentsTable } from "./payments-table";
 
 export default async function PaymentsPage() {
   const t = await getTranslations("payments");
@@ -109,50 +86,15 @@ export default async function PaymentsPage() {
           </Link>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">الطالب</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">الكورس</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("amount")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("method")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("status")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("date")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paymentList.map((payment: any) => (
-                  <tr key={payment.id} className="transition hover:bg-gray-50/50">
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {payment.users?.name_ar || payment.users?.name_en || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {payment.courses?.name_ar || "—"}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {Number(payment.amount || 0).toLocaleString("ar-EG")} ج.م
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {methodLabels[payment.method] || payment.method || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[payment.status] || "bg-gray-100 text-gray-600"}`}>
-                        {statusLabels[payment.status] || payment.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">
-                      {payment.paid_at
-                        ? new Date(payment.paid_at).toLocaleDateString("ar-EG")
-                        : new Date(payment.created_at).toLocaleDateString("ar-EG")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <PaymentsTable
+          payments={paymentList}
+          translations={{
+            amount: t("amount"),
+            method: t("method"),
+            status: t("status"),
+            date: t("date"),
+          }}
+        />
       )}
     </div>
   );

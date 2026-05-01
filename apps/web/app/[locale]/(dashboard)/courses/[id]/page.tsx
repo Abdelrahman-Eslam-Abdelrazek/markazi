@@ -196,7 +196,7 @@ export default async function CourseDetailPage({ params }: Props) {
         ) : (
           <div className="divide-y divide-gray-100">
             {enrollments.map((enrollment: any) => {
-              const student = enrollment.users;
+              const student = Array.isArray(enrollment.users) ? enrollment.users[0] : enrollment.users;
               return (
                 <div key={enrollment.id} className="flex items-center justify-between px-5 py-3">
                   <div className="flex items-center gap-3">

@@ -154,22 +154,36 @@ markazi/
 - [x] Development tracking document (this file)
 
 #### Sprint 1-2: Core Auth & Center Setup
-- [ ] Implement OTP authentication flow (send/verify)
+- [x] Email + password login (Supabase Auth)
+- [x] Center registration wizard (3-step: info, contact, branding)
+- [x] Center profile settings (name, logo, colors) — editable form
+- [x] Role-based dashboard routing (middleware + auth_id lookup)
+- [x] Dashboard layout with RTL sidebar + mobile slide-out nav
+- [x] Auth layout with split-screen design
+- [x] Marketing landing page redesign (glassmorphism nav, gradient hero)
+- [x] 404 page, loading skeleton, error boundary
+- [x] Metadata (title template, description)
+- [ ] OTP authentication flow (send/verify)
 - [ ] Google OAuth integration
-- [ ] Email + password login
-- [ ] Center registration wizard
-- [ ] Center profile settings (name, logo, colors)
 - [ ] Branch management CRUD
 - [ ] User invitation system
-- [ ] Role-based dashboard routing
 
-#### Sprint 3-4: Courses & Content
-- [ ] Course CRUD with all settings
+#### Sprint 3-4: Courses, Students & Content
+- [x] Course CRUD (create, edit, soft-delete)
+- [x] Course list with search/filter (by name, subject, status)
+- [x] Course detail page (stats, units tree, enrolled students)
+- [x] Course publish/unpublish toggle
+- [x] Unit creation (inline form, auto sort order)
+- [x] Student enrollment (by phone number)
+- [x] Student unenroll with confirmation
+- [x] Student CRUD (add, edit, toggle active/inactive, remove)
+- [x] Student list with search/filter (by name, phone, email, status)
+- [x] Student profile page (enrollments, payments, attendance stats)
+- [x] Instructor management (list, add new with card layout)
 - [ ] Unit/Lesson builder (drag & drop ordering)
 - [ ] Video upload with S3 + Mux integration
 - [ ] PDF viewer (in-browser, protected)
 - [ ] Rich text editor for lesson content
-- [ ] Student enrollment flow
 - [ ] Course progress tracking
 - [ ] Drip content logic
 
@@ -184,16 +198,32 @@ markazi/
 - [ ] Grading + feedback interface
 - [ ] Grade reports
 
-#### Sprint 7-8: Payments & Communications
+#### Sprint 7-8: Payments, Attendance & Communications
+- [x] Manual cash payment recording
+- [x] Payment list with summary cards (total, pending, count)
+- [x] Payment table with search/filter (by student, course, status, method)
+- [x] Payment receipt/detail page with printable view
+- [x] Auto-enrollment on payment recording
+- [x] Attendance session detail page (view/edit individual records)
+- [x] Clickable attendance session rows linking to detail view
+- [x] Manual attendance (select course, toggle student status)
+- [x] Attendance list with per-session present/absent/late counts
+- [x] Attendance today summary cards on attendance page
+- [x] Dashboard real-time attendance count
+- [x] Notification center page (type icons, unread dots, time-ago)
+- [x] Header notification bell with live unread count
+- [x] Settings hub (card-based navigation)
+- [x] Center settings editable form (name, contact, branding color)
 - [ ] Paymob integration (Fawry + Card)
-- [ ] Manual cash payment recording
 - [ ] Installment plan creation
 - [ ] Invoice generation (PDF)
 - [ ] WhatsApp Business API integration
 - [ ] SMS notifications (OTP + alerts)
-- [ ] In-app notification system
-- [ ] Attendance system (QR + manual)
+- [ ] QR Code attendance
 - [ ] Center public website (subdomain)
+
+- [x] Reports dashboard (students, revenue with growth %, courses, attendance rate, daily revenue chart)
+- [x] Feature preview pages (exams, assignments, messages — coming soon cards)
 
 ### Phase 2 — Growth
 - [ ] Advanced reports & analytics
@@ -233,5 +263,5 @@ markazi/
 
 ---
 
-_Last updated: April 30, 2026_
-_Phase: Sprint 0 — Foundation (Complete)_
+_Last updated: May 1, 2026_
+_Phase: Sprint 7-8 — Payments, Attendance & Communications (In Progress)_

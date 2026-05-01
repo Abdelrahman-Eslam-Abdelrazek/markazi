@@ -18,7 +18,8 @@ export default async function StudentDetailPage({ params }: Props) {
     .single();
 
   if (!membership) notFound();
-  const student = (membership as any).users;
+  const rawUsers = (membership as any).users;
+  const student = Array.isArray(rawUsers) ? rawUsers[0] : rawUsers;
   if (!student) notFound();
 
   const [enrollmentsRes, paymentsRes, attendanceRes] = await Promise.all([
@@ -149,7 +150,7 @@ export default async function StudentDetailPage({ params }: Props) {
               {enrollments.map((e: any) => (
                 <div key={e.id} className="flex items-center justify-between px-5 py-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{e.courses?.name_ar || "—"}</p>
+                    <p className="text-sm font-medium text-gray-900">{(Array.isArray(e.courses) ? e.courses[0]?.name_ar : e.courses?.name_ar) || "—"}</p>
                     <p className="text-xs text-gray-400">
                       {e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString("ar-EG") : ""}
                     </p>
@@ -186,7 +187,7 @@ export default async function StudentDetailPage({ params }: Props) {
                       {Number(p.amount || 0).toLocaleString("ar-EG")} ج.م
                     </p>
                     <p className="text-xs text-gray-400">
-                      {p.courses?.name_ar || "—"} · {methodLabels[p.method] || p.method}
+                      {(Array.isArray(p.courses) ? p.courses[0]?.name_ar : p.courses?.name_ar) || "—"} · {methodLabels[p.method] || p.method}
                     </p>
                   </div>
                   <div className="text-end">

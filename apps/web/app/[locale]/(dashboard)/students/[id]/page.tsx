@@ -1,6 +1,7 @@
 import { requireCenter } from "../../get-center";
 import { notFound } from "next/navigation";
 import { Link } from "../../../../../i18n/navigation";
+import { StudentStatusToggle, RemoveStudentButton } from "./student-actions";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -72,24 +73,46 @@ export default async function StudentDetailPage({ params }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <Link href="/students" className="mt-1 rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
-          <svg className="h-5 w-5 rtl:rotate-180" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-          </svg>
-        </Link>
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-100 text-xl font-bold text-primary-700">
-            {(student.name_ar || "?").charAt(0)}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{student.name_ar || student.name_en || "—"}</h1>
-            <div className="mt-1 flex items-center gap-3 text-sm text-gray-500">
-              {student.phone && <span dir="ltr">{student.phone}</span>}
-              {student.phone && student.email && <span>·</span>}
-              {student.email && <span dir="ltr">{student.email}</span>}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-4">
+          <Link href="/students" className="mt-1 rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600">
+            <svg className="h-5 w-5 rtl:rotate-180" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </Link>
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-100 text-xl font-bold text-primary-700">
+              {(student.name_ar || "?").charAt(0)}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-gray-900">{student.name_ar || student.name_en || "—"}</h1>
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                  membership.is_active ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
+                }`}>
+                  {membership.is_active ? "نشط" : "غير نشط"}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center gap-3 text-sm text-gray-500">
+                {student.phone && <span dir="ltr">{student.phone}</span>}
+                {student.phone && student.email && <span>·</span>}
+                {student.email && <span dir="ltr">{student.email}</span>}
+              </div>
             </div>
           </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/students/${membershipId}/edit`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+            </svg>
+            تعديل
+          </Link>
+          <StudentStatusToggle membershipId={membershipId} isActive={membership.is_active as boolean} />
+          <RemoveStudentButton membershipId={membershipId} />
         </div>
       </div>
 

@@ -65,6 +65,69 @@ export async function enrollStudent(formData: FormData) {
   return { success: true };
 }
 
+export async function toggleCourseStatus(courseId: string, newStatus: string) {
+  const ctx = await getContext();
+  if (!ctx) return { error: "يجب تسجيل الدخول أولاً" };
+
+  if (!["DRAFT", "PUBLISHED", "ARCHIVED"].includes(newStatus)) {
+    return { error: "حالة غير صالحة" };
+  }
+
+  const { error } = await ctx.admin
+    .from("courses")
+    .update({ status: newStatus })
+    .eq("id", courseId)
+    .eq("center_id", ctx.centerId);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+export async function deleteCourse(courseId: string) {
+  const ctx = await getContext();
+  if (!ctx) return { error: "يجب تسجيل الدخول أولاً" };
+
+  const { error } = await ctx.admin
+    .from("courses")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", courseId)
+    .eq("center_id", ctx.centerId);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+export async function updateCourse(courseId: string, formData: FormData) {
+  const ctx = await getContext();
+  if (!ctx) return { error: "يجب تسجيل الدخول أولاً" };
+
+  const nameAr = formData.get("name_ar") as string;
+  if (!nameAr?.trim()) return { error: "اسم الكورس مطلوب" };
+
+  const price = parseFloat(formData.get("price") as string) || 0;
+  const maxStudents = parseInt(formData.get("max_students") as string) || null;
+
+  const { error } = await ctx.admin
+    .from("courses")
+    .update({
+      name_ar: nameAr.trim(),
+      name_en: (formData.get("name_en") as string)?.trim() || null,
+      description: (formData.get("description") as string)?.trim() || null,
+      price,
+      is_free: price === 0,
+      level: (formData.get("level") as string) || null,
+      subject: (formData.get("subject") as string)?.trim() || null,
+      max_students: maxStudents,
+      start_date: (formData.get("start_date") as string) || null,
+      end_date: (formData.get("end_date") as string) || null,
+    })
+    .eq("id", courseId)
+    .eq("center_id", ctx.centerId);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
 export async function addUnit(formData: FormData) {
   const ctx = await getContext();
   if (!ctx) return { error: "يجب تسجيل الدخول أولاً" };

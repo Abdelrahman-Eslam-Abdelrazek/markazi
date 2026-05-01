@@ -1,4 +1,5 @@
 import { requireCenter } from "../../get-center";
+import { EditCenterForm } from "./edit-form";
 
 export default async function CenterSettingsPage() {
   const ctx = await requireCenter();
@@ -6,7 +7,7 @@ export default async function CenterSettingsPage() {
 
   const { data: center } = await ctx.supabase
     .from("centers")
-    .select("*")
+    .select("name_ar, name_en, description, slug, phone, whatsapp, email, primary_color, secondary_color, subscription_plan, subscription_status, status, trial_ends_at, max_students, max_courses")
     .eq("id", ctx.centerId)
     .single();
 
@@ -14,85 +15,73 @@ export default async function CenterSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">إدارة المركز</h1>
-        <p className="mt-1 text-sm text-gray-500">إعدادات ومعلومات المركز التفصيلية</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">إدارة المركز</h1>
+          <p className="mt-1 text-sm text-gray-500">إعدادات ومعلومات المركز التفصيلية</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+            center.status === "ACTIVE"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-gray-100 text-gray-600"
+          }`}>
+            {center.status === "ACTIVE" ? "نشط" : center.status}
+          </span>
+          <span className="inline-flex rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
+            {center.subscription_plan === "STARTER" ? "Starter (مجاني)" : center.subscription_plan}
+          </span>
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Center Profile Card */}
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-1">
-          <div className="flex flex-col items-center text-center">
+      {/* Subscription Info */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <div
-              className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-bold text-white"
+              className="flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold text-white"
               style={{ backgroundColor: center.primary_color || "#2563EB" }}
             >
               {center.name_ar?.charAt(0)}
             </div>
-            <h2 className="text-lg font-bold text-gray-900">{center.name_ar}</h2>
-            {center.name_en && (
-              <p className="mt-0.5 text-sm text-gray-500">{center.name_en}</p>
-            )}
-            <div className="mt-3 flex items-center gap-2">
-              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                center.status === "ACTIVE"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-gray-100 text-gray-600"
-              }`}>
-                {center.status === "ACTIVE" ? "نشط" : center.status}
-              </span>
-              <span className="inline-flex rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
-                {center.subscription_plan === "STARTER" ? "مجاني (Starter)" : center.subscription_plan}
-              </span>
+            <div>
+              <p className="font-semibold text-gray-900">{center.name_ar}</p>
+              <p className="text-xs text-gray-500" dir="ltr">{center.slug}</p>
             </div>
           </div>
-        </div>
-
-        {/* Details */}
-        <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-base font-semibold text-gray-900">المعلومات الأساسية</h3>
-            <dl className="grid gap-4 sm:grid-cols-2">
+          <div className="flex gap-6 text-center">
+            <div>
+              <p className="text-lg font-bold text-gray-900">{center.max_students || "∞"}</p>
+              <p className="text-xs text-gray-500">أقصى طلاب</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-900">{center.max_courses || "∞"}</p>
+              <p className="text-xs text-gray-500">أقصى كورسات</p>
+            </div>
+            {center.trial_ends_at && (
               <div>
-                <dt className="text-xs font-medium text-gray-500">الرابط المختصر</dt>
-                <dd className="mt-1 text-sm text-gray-900" dir="ltr">{center.slug}</dd>
+                <p className="text-lg font-bold text-amber-600">
+                  {new Date(center.trial_ends_at).toLocaleDateString("ar-EG", { month: "short", day: "numeric" })}
+                </p>
+                <p className="text-xs text-gray-500">نهاية التجربة</p>
               </div>
-              <div>
-                <dt className="text-xs font-medium text-gray-500">المنطقة الزمنية</dt>
-                <dd className="mt-1 text-sm text-gray-900">{center.timezone || "Africa/Cairo"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium text-gray-500">العملة</dt>
-                <dd className="mt-1 text-sm text-gray-900">{center.currency || "EGP"}</dd>
-              </div>
-              {center.description && (
-                <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-gray-500">الوصف</dt>
-                  <dd className="mt-1 text-sm text-gray-600">{center.description}</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-base font-semibold text-gray-900">بيانات التواصل</h3>
-            <dl className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-xs font-medium text-gray-500">الهاتف</dt>
-                <dd className="mt-1 text-sm text-gray-900" dir="ltr">{center.phone || "غير محدد"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium text-gray-500">واتساب</dt>
-                <dd className="mt-1 text-sm text-gray-900" dir="ltr">{center.whatsapp || "غير محدد"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-medium text-gray-500">البريد الإلكتروني</dt>
-                <dd className="mt-1 text-sm text-gray-900" dir="ltr">{center.email || "غير محدد"}</dd>
-              </div>
-            </dl>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Editable Form */}
+      <EditCenterForm
+        center={{
+          name_ar: center.name_ar,
+          name_en: center.name_en,
+          description: center.description,
+          phone: center.phone,
+          whatsapp: center.whatsapp,
+          email: center.email,
+          primary_color: center.primary_color,
+        }}
+      />
     </div>
   );
 }

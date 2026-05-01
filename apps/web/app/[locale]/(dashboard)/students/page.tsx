@@ -106,17 +106,17 @@ export default async function StudentsPage() {
                   return (
                     <tr key={membership.id} className="transition hover:bg-gray-50/50">
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
+                        <Link href={`/students/${membership.id}`} className="group flex items-center gap-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
                             {(user.name_ar || user.name_en || "?").charAt(0)}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{user.name_ar || user.name_en || "—"}</p>
+                            <p className="font-medium text-gray-900 group-hover:text-primary-600">{user.name_ar || user.name_en || "—"}</p>
                             {user.name_en && user.name_ar && (
                               <p className="text-xs text-gray-400">{user.name_en}</p>
                             )}
                           </div>
-                        </div>
+                        </Link>
                       </td>
                       <td className="px-4 py-3 text-gray-600" dir="ltr">
                         {user.phone || "—"}

@@ -9,7 +9,7 @@ export default async function DashboardPage() {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [students, coursesCount, payments, todayAttendance, recentCourses, recentStudents] = await Promise.all([
+  const [students, coursesCount, payments, todayAttendance, recentCourses, recentStudents, recentPayments, pendingPayments] = await Promise.all([
     ctx.supabase
       .from("center_memberships")
       .select("id", { count: "exact", head: true })
@@ -44,6 +44,18 @@ export default async function DashboardPage() {
       .eq("role", "STUDENT")
       .order("joined_at", { ascending: false })
       .limit(5),
+    ctx.supabase
+      .from("payments")
+      .select("id, amount, status, method, paid_at, users(name_ar, name_en), courses(name_ar)")
+      .eq("center_id", ctx.centerId)
+      .eq("status", "COMPLETED")
+      .order("paid_at", { ascending: false })
+      .limit(5),
+    ctx.supabase
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("center_id", ctx.centerId)
+      .eq("status", "PENDING"),
   ]);
 
   const totalRevenue = (payments.data || []).reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
@@ -55,6 +67,8 @@ export default async function DashboardPage() {
   const todayTotal = todaySessions.reduce((sum: number, s: any) => sum + ((s.attendance_records as any[])?.length || 0), 0);
   const courseList = recentCourses.data || [];
   const studentsList = recentStudents.data || [];
+  const paymentsList = recentPayments.data || [];
+  const pendingCount = pendingPayments.count || 0;
 
   const cards = [
     {
@@ -158,6 +172,27 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Pending Alert */}
+      {pendingCount > 0 && (
+        <Link
+          href="/payments"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 transition hover:bg-amber-100"
+        >
+          <div className="rounded-lg bg-amber-100 p-2">
+            <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800">{pendingCount} دفعة معلقة تحتاج مراجعة</p>
+            <p className="text-xs text-amber-600">اضغط للعرض</p>
+          </div>
+          <svg className="h-5 w-5 text-amber-400 rtl:rotate-180" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </Link>
+      )}
+
       {/* Data Panels */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Courses */}
@@ -214,7 +249,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="divide-y divide-gray-100">
               {studentsList.map((m: any) => {
-                const s = m.users;
+                const s = Array.isArray(m.users) ? m.users[0] : m.users;
                 return (
                   <Link key={m.id} href={`/students/${m.id}`} className="flex items-center gap-3 px-5 py-3 transition hover:bg-gray-50">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
@@ -234,6 +269,43 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Recent Payments */}
+      {paymentsList.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+            <h2 className="text-base font-semibold text-gray-900">آخر المدفوعات</h2>
+            <Link href="/payments" className="text-xs font-medium text-primary-600 hover:text-primary-700">عرض الكل</Link>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {paymentsList.map((p: any) => {
+              const pu = Array.isArray(p.users) ? p.users[0] : p.users;
+              const pc = Array.isArray(p.courses) ? p.courses[0] : p.courses;
+              return (
+                <Link key={p.id} href={`/payments/${p.id}`} className="flex items-center justify-between px-5 py-3 transition hover:bg-gray-50">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
+                      {(pu?.name_ar || "?").charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{pu?.name_ar || pu?.name_en || "—"}</p>
+                      <p className="text-xs text-gray-400">{pc?.name_ar || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="text-end">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {Number(p.amount || 0).toLocaleString("ar-EG")} ج.م
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {p.paid_at ? new Date(p.paid_at).toLocaleDateString("ar-EG") : "—"}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

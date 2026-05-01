@@ -75,7 +75,7 @@ export default async function InstructorsPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {instructorList.map((membership: any) => {
-            const user = membership.users;
+            const user = Array.isArray(membership.users) ? membership.users[0] : membership.users;
             if (!user) return null;
             const courses = courseCounts[membership.user_id] || 0;
             return (

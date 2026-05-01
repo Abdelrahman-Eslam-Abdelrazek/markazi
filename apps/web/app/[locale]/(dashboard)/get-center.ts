@@ -26,12 +26,15 @@ export async function requireCenter() {
 
   if (!membership) return null;
 
+  const rawCenters = (membership as any).centers;
+  const center = Array.isArray(rawCenters) ? rawCenters[0] : rawCenters;
+
   return {
     supabase: admin,
     user,
     centerId: membership.center_id as string,
     role: membership.role as string,
-    centerName: (membership as any).centers?.name_ar as string,
-    color: (membership as any).centers?.primary_color as string || "#2563EB",
+    centerName: center?.name_ar as string,
+    color: (center?.primary_color as string) || "#2563EB",
   };
 }

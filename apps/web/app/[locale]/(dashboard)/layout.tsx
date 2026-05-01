@@ -30,7 +30,8 @@ async function getUserCenter() {
 
   if (!membership) return null;
 
-  const center = (membership as any).centers;
+  const rawCenters = (membership as any).centers;
+  const center = Array.isArray(rawCenters) ? rawCenters[0] : rawCenters;
   return {
     user,
     role: membership.role as string,

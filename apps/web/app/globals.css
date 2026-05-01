@@ -43,4 +43,21 @@
   html[dir="ltr"] body {
     font-family: var(--font-family-inter);
   }
+
+  input[type="date"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="email"] {
+    font-feature-settings: "tnum";
+  }
+
+  ::selection {
+    background-color: var(--color-primary-100);
+    color: var(--color-primary-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
 }

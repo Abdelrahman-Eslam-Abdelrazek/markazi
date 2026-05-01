@@ -16,6 +16,16 @@ const inter = Inter({
   display: "swap",
 });
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: {
+    default: "مركزي — منصة إدارة مراكز التعليم",
+    template: "%s | مركزي",
+  },
+  description: "المنصة الشاملة لإدارة مراكز التعليم الخاصة في مصر",
+};
+
 type Props = {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;

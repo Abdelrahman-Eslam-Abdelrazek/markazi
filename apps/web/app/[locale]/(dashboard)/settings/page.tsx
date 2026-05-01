@@ -75,7 +75,7 @@ export default async function SettingsPage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-500">الخطة</label>
               <span className="inline-flex rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
-                {center.subscription_plan === "FREE" ? "مجاني" : center.subscription_plan}
+                {center.subscription_plan === "STARTER" ? "مجاني (Starter)" : center.subscription_plan}
               </span>
             </div>
             <div>

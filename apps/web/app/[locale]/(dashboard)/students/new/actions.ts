@@ -16,10 +16,19 @@ export async function addStudent(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "يجب تسجيل الدخول أولاً" };
 
-  const { data: membership } = await supabase
+  const admin = createAdminClient();
+
+  const { data: publicUser } = await admin
+    .from("users")
+    .select("id")
+    .eq("auth_id", user.id)
+    .single();
+  if (!publicUser) return { error: "يجب إنشاء حساب أولاً" };
+
+  const { data: membership } = await admin
     .from("center_memberships")
     .select("center_id, role")
-    .eq("user_id", user.id)
+    .eq("user_id", publicUser.id)
     .eq("is_active", true)
     .limit(1)
     .single();
@@ -30,8 +39,6 @@ export async function addStudent(formData: FormData) {
   const phone = formData.get("phone") as string;
   if (!nameAr?.trim()) return { error: "اسم الطالب مطلوب" };
   if (!phone?.trim()) return { error: "رقم الهاتف مطلوب" };
-
-  const admin = createAdminClient();
 
   const { data: existingUser } = await admin
     .from("users")

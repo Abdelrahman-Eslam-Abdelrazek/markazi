@@ -1,14 +1,25 @@
-import { createSupabaseServerClient } from "@markazi/db";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@markazi/db";
 
 export async function requireCenter() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: membership } = await supabase
+  // Use admin client to bypass RLS on center_memberships (no SELECT policy exists)
+  const admin = await createSupabaseAdminClient();
+
+  const { data: publicUser } = await admin
+    .from("users")
+    .select("id")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (!publicUser) return null;
+
+  const { data: membership } = await admin
     .from("center_memberships")
     .select("center_id, role, centers(id, name_ar, primary_color)")
-    .eq("user_id", user.id)
+    .eq("user_id", publicUser.id)
     .eq("is_active", true)
     .limit(1)
     .single();
@@ -16,7 +27,7 @@ export async function requireCenter() {
   if (!membership) return null;
 
   return {
-    supabase,
+    supabase: admin,
     user,
     centerId: membership.center_id as string,
     role: membership.role as string,

@@ -1,16 +1,20 @@
 "use server";
 
-import { createSupabaseServerClient } from "@markazi/db";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@markazi/db";
 
 export async function getStudentsAndCourses() {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { students: [], courses: [] };
 
-  const { data: membership } = await supabase
+  const admin = await createSupabaseAdminClient();
+  const { data: publicUser } = await admin.from("users").select("id").eq("auth_id", user.id).single();
+  if (!publicUser) return { students: [], courses: [] };
+
+  const { data: membership } = await admin
     .from("center_memberships")
     .select("center_id")
-    .eq("user_id", user.id)
+    .eq("user_id", publicUser.id)
     .eq("is_active", true)
     .limit(1)
     .single();
@@ -18,13 +22,13 @@ export async function getStudentsAndCourses() {
   if (!membership) return { students: [], courses: [] };
 
   const [studentRes, courseRes] = await Promise.all([
-    supabase
+    admin
       .from("center_memberships")
       .select("user_id, users(name_ar, name_en)")
       .eq("center_id", membership.center_id)
       .eq("role", "STUDENT")
       .eq("is_active", true),
-    supabase
+    admin
       .from("courses")
       .select("id, name_ar, price")
       .eq("center_id", membership.center_id)
@@ -50,10 +54,14 @@ export async function recordPayment(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "يجب تسجيل الدخول أولاً" };
 
-  const { data: membership } = await supabase
+  const admin = await createSupabaseAdminClient();
+  const { data: publicUser } = await admin.from("users").select("id").eq("auth_id", user.id).single();
+  if (!publicUser) return { error: "يجب إنشاء حساب أولاً" };
+
+  const { data: membership } = await admin
     .from("center_memberships")
     .select("center_id")
-    .eq("user_id", user.id)
+    .eq("user_id", publicUser.id)
     .eq("is_active", true)
     .limit(1)
     .single();
@@ -70,7 +78,7 @@ export async function recordPayment(formData: FormData) {
     return { error: "جميع الحقول المطلوبة يجب ملؤها" };
   }
 
-  const { error: insertError } = await supabase
+  const { error: insertError } = await admin
     .from("payments")
     .insert({
       center_id: membership.center_id,

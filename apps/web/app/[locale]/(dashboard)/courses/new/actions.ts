@@ -1,16 +1,20 @@
 "use server";
 
-import { createSupabaseServerClient } from "@markazi/db";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@markazi/db";
 
 export async function createCourse(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "يجب تسجيل الدخول أولاً" };
 
-  const { data: membership } = await supabase
+  const admin = await createSupabaseAdminClient();
+  const { data: publicUser } = await admin.from("users").select("id").eq("auth_id", user.id).single();
+  if (!publicUser) return { error: "يجب إنشاء حساب أولاً" };
+
+  const { data: membership } = await admin
     .from("center_memberships")
     .select("center_id, role")
-    .eq("user_id", user.id)
+    .eq("user_id", publicUser.id)
     .eq("is_active", true)
     .limit(1)
     .single();
@@ -30,7 +34,7 @@ export async function createCourse(formData: FormData) {
   const price = parseFloat(formData.get("price") as string) || 0;
   const maxStudents = parseInt(formData.get("max_students") as string) || null;
 
-  const { data: branch } = await supabase
+  const { data: branch } = await admin
     .from("branches")
     .select("id")
     .eq("center_id", membership.center_id)
@@ -38,7 +42,7 @@ export async function createCourse(formData: FormData) {
     .limit(1)
     .single();
 
-  const { error: insertError } = await supabase
+  const { error: insertError } = await admin
     .from("courses")
     .insert({
       center_id: membership.center_id,

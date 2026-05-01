@@ -1,23 +1,27 @@
 "use server";
 
-import { createSupabaseServerClient } from "@markazi/db";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@markazi/db";
 
 export async function getCourseStudents(courseId: string) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { courses: [], students: [] };
 
-  const { data: membership } = await supabase
+  const admin = await createSupabaseAdminClient();
+  const { data: publicUser } = await admin.from("users").select("id").eq("auth_id", user.id).single();
+  if (!publicUser) return { courses: [], students: [] };
+
+  const { data: membership } = await admin
     .from("center_memberships")
     .select("center_id")
-    .eq("user_id", user.id)
+    .eq("user_id", publicUser.id)
     .eq("is_active", true)
     .limit(1)
     .single();
 
   if (!membership) return { courses: [], students: [] };
 
-  const { data: courses } = await supabase
+  const { data: courses } = await admin
     .from("courses")
     .select("id, name_ar")
     .eq("center_id", membership.center_id)
@@ -30,7 +34,7 @@ export async function getCourseStudents(courseId: string) {
     };
   }
 
-  const { data: enrollments } = await supabase
+  const { data: enrollments } = await admin
     .from("enrollments")
     .select("user_id, users(name_ar, name_en)")
     .eq("course_id", courseId)
@@ -55,17 +59,21 @@ export async function submitAttendance(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "يجب تسجيل الدخول أولاً" };
 
-  const { data: membership } = await supabase
+  const admin = await createSupabaseAdminClient();
+  const { data: publicUser } = await admin.from("users").select("id").eq("auth_id", user.id).single();
+  if (!publicUser) return { error: "يجب إنشاء حساب أولاً" };
+
+  const { data: membership } = await admin
     .from("center_memberships")
     .select("center_id")
-    .eq("user_id", user.id)
+    .eq("user_id", publicUser.id)
     .eq("is_active", true)
     .limit(1)
     .single();
 
   if (!membership) return { error: "لا يوجد مركز مرتبط بحسابك" };
 
-  const { data: session, error: sessionError } = await supabase
+  const { data: session, error: sessionError } = await admin
     .from("attendance_sessions")
     .insert({
       center_id: membership.center_id,
@@ -89,7 +97,7 @@ export async function submitAttendance(data: {
       recorded_at: new Date().toISOString(),
     }));
 
-    const { error: recordsError } = await supabase
+    const { error: recordsError } = await admin
       .from("attendance_records")
       .insert(records);
 

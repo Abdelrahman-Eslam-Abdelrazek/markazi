@@ -56,31 +56,35 @@ export default async function middleware(request: NextRequest) {
 
   // Authenticated + on protected route → check if user has a center
   if (user && isProtected) {
-    const { data: membership } = await supabase
-      .from("center_memberships")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .limit(1)
-      .single();
-
-    if (!membership) {
-      return NextResponse.redirect(new URL("/setup", request.url));
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceKey) {
+      const adminSupabase = createServerClient(supabaseUrl, serviceKey, {
+        cookies: { getAll() { return []; }, setAll() {} },
+      });
+      const { data: publicUser } = await adminSupabase.from("users").select("id").eq("auth_id", user.id).single();
+      const hasMembership = publicUser
+        ? !!(await adminSupabase.from("center_memberships").select("id").eq("user_id", publicUser.id).eq("is_active", true).limit(1).single()).data
+        : false;
+      if (!hasMembership) {
+        return NextResponse.redirect(new URL("/setup", request.url));
+      }
     }
   }
 
   // On setup page but already has a center → go to dashboard
   if (user && cleanPath.startsWith(setupRoute)) {
-    const { data: membership } = await supabase
-      .from("center_memberships")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .limit(1)
-      .single();
-
-    if (membership) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceKey) {
+      const adminSupabase = createServerClient(supabaseUrl, serviceKey, {
+        cookies: { getAll() { return []; }, setAll() {} },
+      });
+      const { data: publicUser } = await adminSupabase.from("users").select("id").eq("auth_id", user.id).single();
+      const hasMembership = publicUser
+        ? !!(await adminSupabase.from("center_memberships").select("id").eq("user_id", publicUser.id).eq("is_active", true).limit(1).single()).data
+        : false;
+      if (hasMembership) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
     }
   }
 

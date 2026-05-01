@@ -67,7 +67,7 @@ export async function createCenter(data: SetupData) {
       status: "ACTIVE",
       timezone: "Africa/Cairo",
       currency: "EGP",
-      subscription_plan: "FREE",
+      subscription_plan: "STARTER",
       subscription_status: "TRIALING",
       trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       max_students: 50,
@@ -93,8 +93,39 @@ export async function createCenter(data: SetupData) {
     return { error: branchError.message };
   }
 
+  // Get or create the public.users row linked to this auth user
+  // (center_memberships.user_id references public.users.id, not auth.users.id)
+  const { data: existingPublicUser } = await admin
+    .from("users")
+    .select("id")
+    .eq("auth_id", user.id)
+    .single();
+
+  let publicUserId: string;
+
+  if (existingPublicUser) {
+    publicUserId = existingPublicUser.id;
+  } else {
+    const { data: newPublicUser, error: userCreateError } = await admin
+      .from("users")
+      .insert({
+        auth_id: user.id,
+        email: user.email,
+        name_ar: user.user_metadata?.full_name || user.email?.split("@")[0] || "مستخدم",
+      })
+      .select("id")
+      .single();
+
+    if (userCreateError) {
+      await admin.from("branches").delete().eq("center_id", center.id);
+      await admin.from("centers").delete().eq("id", center.id);
+      return { error: userCreateError.message };
+    }
+    publicUserId = newPublicUser.id;
+  }
+
   const { error: memberError } = await admin.from("center_memberships").insert({
-    user_id: user.id,
+    user_id: publicUserId,
     center_id: center.id,
     role: "CENTER_OWNER",
     is_active: true,

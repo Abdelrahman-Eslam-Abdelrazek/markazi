@@ -42,7 +42,7 @@ export default async function CenterSettingsPage() {
                 {center.status === "ACTIVE" ? "نشط" : center.status}
               </span>
               <span className="inline-flex rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
-                {center.subscription_plan === "FREE" ? "مجاني" : center.subscription_plan}
+                {center.subscription_plan === "STARTER" ? "مجاني (Starter)" : center.subscription_plan}
               </span>
             </div>
           </div>

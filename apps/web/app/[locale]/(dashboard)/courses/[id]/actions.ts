@@ -162,3 +162,17 @@ export async function addUnit(formData: FormData) {
   if (error) return { error: error.message };
   return { success: true };
 }
+
+export async function unenrollStudent(enrollmentId: string) {
+  const ctx = await getContext();
+  if (!ctx) return { error: "يجب تسجيل الدخول أولاً" };
+
+  const { error } = await ctx.admin
+    .from("enrollments")
+    .delete()
+    .eq("id", enrollmentId)
+    .eq("center_id", ctx.centerId);
+
+  if (error) return { error: error.message };
+  return { success: true };
+}

@@ -1,12 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { requireCenter } from "../get-center";
 import { Link } from "../../../../i18n/navigation";
-
-const roleLabels: Record<string, string> = {
-  STUDENT: "طالب",
-  PARENT: "ولي أمر",
-  INSTRUCTOR: "مُحاضر",
-};
+import { StudentsTable } from "./students-table";
 
 export default async function StudentsPage() {
   const t = await getTranslations("students");
@@ -35,6 +30,11 @@ export default async function StudentsPage() {
       enrollmentCounts[e.user_id] = (enrollmentCounts[e.user_id] || 0) + 1;
     });
   }
+
+  const studentsWithCounts = studentList.map((m: any) => ({
+    ...m,
+    enrollmentCount: enrollmentCounts[m.user_id] || 0,
+  }));
 
   return (
     <div className="space-y-6">
@@ -85,67 +85,18 @@ export default async function StudentsPage() {
           </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("name")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("phone")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("email")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("level")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">الكورسات</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("status")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {studentList.map((membership: any) => {
-                  const user = membership.users;
-                  if (!user) return null;
-                  const courses = enrollmentCounts[membership.user_id] || 0;
-                  return (
-                    <tr key={membership.id} className="transition hover:bg-gray-50/50">
-                      <td className="px-4 py-3">
-                        <Link href={`/students/${membership.id}`} className="group flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700">
-                            {(user.name_ar || user.name_en || "?").charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900 group-hover:text-primary-600">{user.name_ar || user.name_en || "—"}</p>
-                            {user.name_en && user.name_ar && (
-                              <p className="text-xs text-gray-400">{user.name_en}</p>
-                            )}
-                          </div>
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600" dir="ltr">
-                        {user.phone || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600" dir="ltr">
-                        {user.email || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {user.education_level || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {courses > 0 ? `${courses} كورس` : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          membership.is_active
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-gray-100 text-gray-500"
-                        }`}>
-                          {membership.is_active ? t("active") : t("inactive")}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <StudentsTable
+          students={studentsWithCounts}
+          translations={{
+            name: t("name"),
+            phone: t("phone"),
+            email: t("email"),
+            level: t("level"),
+            status: t("status"),
+            active: t("active"),
+            inactive: t("inactive"),
+          }}
+        />
       )}
     </div>
   );

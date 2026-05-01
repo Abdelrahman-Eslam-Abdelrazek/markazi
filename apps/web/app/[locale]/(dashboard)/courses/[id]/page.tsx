@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { EnrollStudentForm } from "./enroll-form";
 import { AddUnitForm } from "./add-unit-form";
 import { CourseStatusToggle, DeleteCourseButton } from "./course-actions";
+import { UnenrollButton } from "./unenroll-button";
 
 const statusColors: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700",
@@ -228,6 +229,7 @@ export default async function CourseDetailPage({ params }: Props) {
                     }`}>
                       {enrollment.status === "ACTIVE" ? "نشط" : enrollment.status === "COMPLETED" ? "مكتمل" : enrollment.status}
                     </span>
+                    <UnenrollButton enrollmentId={enrollment.id} />
                   </div>
                 </div>
               );

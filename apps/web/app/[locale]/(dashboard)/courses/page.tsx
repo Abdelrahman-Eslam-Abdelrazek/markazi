@@ -1,18 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { requireCenter } from "../get-center";
 import { Link } from "../../../../i18n/navigation";
-
-const statusColors: Record<string, string> = {
-  DRAFT: "bg-gray-100 text-gray-700",
-  PUBLISHED: "bg-emerald-50 text-emerald-700",
-  ARCHIVED: "bg-amber-50 text-amber-700",
-};
-
-const statusLabels: Record<string, string> = {
-  DRAFT: "مسودة",
-  PUBLISHED: "منشور",
-  ARCHIVED: "مؤرشف",
-};
+import { CoursesTable } from "./courses-table";
 
 export default async function CoursesPage() {
   const t = await getTranslations("courses");
@@ -40,6 +29,11 @@ export default async function CoursesPage() {
       enrollmentCounts[e.course_id] = (enrollmentCounts[e.course_id] || 0) + 1;
     });
   }
+
+  const coursesWithCounts = courseList.map((c: any) => ({
+    ...c,
+    enrollmentCount: enrollmentCounts[c.id] || 0,
+  }));
 
   return (
     <div className="space-y-6">
@@ -86,66 +80,18 @@ export default async function CoursesPage() {
           </Link>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("name")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("status")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("students")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("price")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("level")}</th>
-                  <th className="px-4 py-3 text-start text-xs font-semibold text-gray-500">{t("startDate")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {courseList.map((course: any) => {
-                  const enrolled = enrollmentCounts[course.id] || 0;
-                  return (
-                    <tr key={course.id} className="transition hover:bg-gray-50/50">
-                      <td className="px-4 py-3">
-                        <Link href={`/courses/${course.id}`} className="group">
-                          <p className="font-medium text-gray-900 group-hover:text-primary-600">{course.name_ar}</p>
-                          {course.subject && (
-                            <p className="mt-0.5 text-xs text-gray-400">{course.subject}</p>
-                          )}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[course.status] || statusColors.DRAFT}`}>
-                          {statusLabels[course.status] || course.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        <div className="flex items-center gap-1.5">
-                          <span>{enrolled}</span>
-                          {course.max_students && (
-                            <span className="text-gray-400">/ {course.max_students}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {course.is_free ? (
-                          <span className="text-emerald-600 font-medium">{t("free")}</span>
-                        ) : (
-                          <span>{Number(course.price || 0).toLocaleString("ar-EG")} ج.م</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">{course.level || "—"}</td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {course.start_date
-                          ? new Date(course.start_date).toLocaleDateString("ar-EG")
-                          : "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <CoursesTable
+          courses={coursesWithCounts}
+          translations={{
+            name: t("name"),
+            status: t("status"),
+            students: t("students"),
+            price: t("price"),
+            level: t("level"),
+            startDate: t("startDate"),
+            free: t("free"),
+          }}
+        />
       )}
     </div>
   );
